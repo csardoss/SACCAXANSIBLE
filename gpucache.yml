@@ -1,0 +1,44 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Stop Axxon Serice
+    ansible.builtin.systemd_service:
+      name: axxon-one-raft
+      state: stopped
+
+  - name: Copy Thermal Filter to Server
+    ansible.builtin.copy:
+      src: /mnt/sshare/AI_Files/Neural_Tracker/Thermal_Human_Filter/Thermal_Filter_v3.3_06202025/dpe-4907_small_HumanCar_GPU_v2.ann
+      dest: /opt/AxxonSoft/DetectorPack/NeuroSDK/dpe-4907_small_HumanCar_GPU_v2.ann
+      remote_src: yes
+      owner: root
+      group: root
+      mode: '0775'
+
+  - name: Run Axxon GPU Cache Script for Thermal Filter
+    ansible.builtin.shell:
+      chdir: /opt/AxxonSoft/DetectorPack
+      cmd: echo "0" | ./NeuroPackGpuCacheGenerator -p /opt/AxxonSoft/DetectorPack/NeuroSDK/dpe-4907_small_HumanCar_GPU_v2.ann
+
+  - name: Run Axxon GPU Cache Script Nano Filter NON-Quantized
+    ansible.builtin.shell:
+      chdir: /opt/AxxonSoft/DetectorPack
+      cmd: echo "0" | ./NeuroPackGpuCacheGenerator -p /opt/AxxonSoft/DetectorPack/NeuroSDK/GeneralNMHumanAndVehicle_Nano_v1.0_GPU_onnx.ann
+
+  - name: Run Axxon GPU Cache Script Nano Filter Quantized
+    ansible.builtin.shell:
+      chdir: /opt/AxxonSoft/DetectorPack
+      cmd: echo "0" | ./NeuroPackGpuCacheGenerator -p /opt/AxxonSoft/DetectorPack/NeuroSDK/GeneralNMHumanAndVehicle_Nano_v1.0_GPU_onnx.ann --int8=1
+
+  - name: Run Axxon GPU Cache Script Medium Filter Quantized
+    ansible.builtin.shell:
+      chdir: /opt/AxxonSoft/DetectorPack
+      cmd: echo "0" | ./NeuroPackGpuCacheGenerator -p /opt/AxxonSoft/DetectorPack/NeuroSDK/GeneralNMHumanAndVehicle_Medium_v1.0_GPU_onnx.ann --int8=1
+
+  - name: Start Axxon Serice
+    ansible.builtin.systemd_service:
+      name: axxon-one-raft
+      state: started
